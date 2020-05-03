@@ -25,6 +25,8 @@
 
 ## WSL2 的改造思路
 
+&emsp;&emsp;通过对Windows的升级，来最终获取WSL2的使用体验。不过也可以在VMware中安装最新的体验版来直接使用WSL2的所有特性。我注册了微软的体验者用户，然后从[Windows10体验站](https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewiso?wa=wsignin1.0)中下载最新的体验包 **Windows10_InsiderPreview_Client_x64_zh-cn_19041.iso**。
+
 &emsp;&emsp;微软在新的 WSL2 中（安装请参考 [WSL2 安装](https://docs.microsoft.com/zh-cn/windows/wsl/wsl2-install)），使用了 Hyper-V 技术支持独立的 Linux 应用，但遗憾的是，无论是微软的 Hyper-V 技术还是这个 Windows 10 2004 版上新的 WSL2，都不直接支持无线网卡等 USB 设备。最近在研究 WSL 的过程中，发现利用微软开源的 WSL 内核代码，通过手动编译内核，加入一个名为 USB/IP 的项目，通过在宿主机中运行 USB/IP 的服务程序，来将主机的USB网卡通过 USB/IP 转发给 WSL 内核中，从而实现主机 USB 设备透明地提供给 WSL 使用。
 
 &emsp;&emsp;在 Windows 中安装 USB/IP，可以通过下载 GIT 代码来编译实现：git clone <https://github.com/cezuni/usbip-win.git> 。USB/IP 的功能就是将任何主机端的 USB 口，通过以太报文传送到客户端，让客户端虚拟出这个 USB 设备，实现 USB 协议的透传效果。
