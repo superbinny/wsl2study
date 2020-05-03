@@ -19,9 +19,10 @@
 
 &emsp;&emsp;升级的目的是为了打造一个强有力的Kali，因此，无线网卡的加载是非常重要的。以下是在WSL中安装的Kali界面和工具集。具体过程就省略了，和本次技术实践的目的不一样。
 
-![完整的WSL2 Kali环境](https://github.com/superbinny/wsl2study/blob/master/img/kali_full.png)
+![完整的WSL2 Kali环境](https://github.com/superbinny/wsl2study/raw/master/img/kali_full.jpg)
 
 ## WSL2的改造思路
+
 &emsp;&emsp;微软在新的WSL2中（安装请参考[WSL2安装](https://docs.microsoft.com/zh-cn/windows/wsl/wsl2-install)），使用了Hyper-V技术支持独立的Linux应用，但遗憾的是，无论是微软的Hyper-V技术还是这个Windows 10 2004版上新的WSL2，都不直接支持无线网卡等USB设备。最近在研究WSL的过程中，发现利用微软开源的WSL内核代码，通过手动编译内核，加入一个名为USBIP的项目，通过在宿主机中运行USBIP的服务程序，来将主机的USB网卡通过USBIP转发给WSL内核中，从而实现主机USB设备透明地提供给WSL使用。
 
 &emsp;&emsp;在Windows中安装USBIP，可以通过下载GIT代码来编译实现：git clone <https://github.com/cezuni/usbip-win.git> 。USBIP的功能就是将任何主机端的USB口，通过以太报文传送到客户端，让客户端虚拟出这个USB设备，实现USB协议的透传效果。
@@ -42,13 +43,20 @@
 
 ![Realtek-RTL8187无线网卡](https://github.com/superbinny/wsl2study/blob/master/img/Realtek-RTL8187.jpg)
 
-&emsp;&emsp;最好先***make distclean***清除所有的垃圾文件，然后重新编译。最近发现WSL2-Linux-Kernel的变化挺大的，所以，最好.config备份工作以后，最好还是经常做一下git reset --hard以及git pull来更新最新内核文件。为了简单起见，最好从当前的操作系统中拷贝定制的.config文件来正确编译新的内核：
+&emsp;&emsp;最好先***make distclean***清除所有的垃圾文件，然后重新编译。最近发现WSL2-Linux-Kernel的变化挺大的，所以，最好.config备份工作以后，最好还是经常做一下git reset --hard以及git pull来更新最新内核文件。为了简单起见，最好从当前的操作系统中拷贝定制的.config文件来正确编译新的内核。
 
 &emsp;&emsp;***cp /proc/config.gz . & gzip -d ./config.gz & mv config .config & make menuconfig***
 
+&emsp;&emsp;由于新内核支持USBIP，所以在menuconfig中需要选择：
+
++ **Device Drivers->USB support->USB/IP support[M]**
++ **Device Drivers->USB support->Number of USB/IP virtual host controllers(1)**
++ **Device Drivers->Network device support->USB Network Adapters[M]**
++ 。。。，各种对USB网卡和你需要的USB设备驱动支持
+
 &emsp;&emsp;编译结束以后，可以***make modules_install & make heards_install & make install***来安装内核文件和支持库到 /lib/modules 中。
 
-&emsp;&emsp;这里我有个技巧：可以随便在某个硬盘x:上建立一个Source目录，然后软连接到该目录，以便于内外交换各种文件和在外部宿主机上编译代码。我的所有源码文件都存放在这个x:\Source中。
+&emsp;&emsp;这里我有个技巧：随便在某个硬盘x:上建立一个Source目录，然后软连接到该目录，以便于内外交换各种文件和在外部宿主机上编译代码。我的所有源码文件都存放在这个x:\Source中。
 
 &emsp;&emsp;***mkdir ~/source & ln -s /mnt/x/Source ~/source***
 
@@ -56,9 +64,26 @@
 
 &emsp;&emsp;编译后，在本级目录中找到vmlinux文件，拷贝到~/source中，然后停止WSL虚拟机（PS C:\WINDOWS\system32>***wsl --shutdown***）,再然后，备份好***C:\Windows\System32\lxss\tools\kernel***，将vmlinux改名为kernel以后，重新启动Kali。
 
-&emsp;&emsp;![编译后产生的vmlinux文件](https://github.com/superbinny/wsl2study/blob/master/img/uname_r.png)
+&emsp;&emsp;![新内核版本](https://github.com/superbinny/wsl2study/blob/master/img/uname_r.png)
 
 &emsp;&emsp;至此，已经改造了新的WSL2内核，用来加载我们的USBIP驱动了。
 
-## 编译USBIP并加入到内核中
+## 编译USBIP工具
 
+&emsp;&emsp;单独编译usbip的加载工具，以便于后面和主机的通讯以及模拟仿真。
+
+&emsp;&emsp;进入内核代码的tools，开始编译：
+
+&emsp;&emsp;***cd tools/usb/usbip & ./autogen.sh & ./configure & make install***
+
+##在Kali中挂在无线网卡
+
+### 在Windows中提供USB/IP服务
+
+&emsp;&emsp;见证奇迹的时候即将开始。首先，我们要将Windows设置成测试模式，以便于加载USBIP的驱动，并提供USBIP服务。这个过程可以在百度上搜索。如果实在搞不定，有时间我再写一篇USB/IP在Windows下的编译和使用。但是没技术含量的东西实在没兴趣做。
+
+&emsp;&emsp;以下是我用usbip列出Windows上的设备并且绑定该设备提供服务的画面，注意，其中1-4为RTL8187L网卡：
+
+&emsp;&emsp;![Windows加载USB/IP](https://github.com/superbinny/wsl2study/blob/master/img/usbip_win.jpg)
+
+### 在Kali中启动USB/IP，以接入Windows的USB设备
