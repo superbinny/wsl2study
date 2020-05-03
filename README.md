@@ -13,8 +13,16 @@
 
 &emsp;&emsp;还有个想法，Mark一下。如果用这个技术编译进安卓模拟器中，就可以用任何无线网卡，通过WiFi万能密钥功能获取密码了。并且还让普通手机透明对接任何大功率无线网卡。
 
+## 改造Kali，安装超级工具集
+
+&emsp;&emsp;从微软商店下载安装最新的Kali2020，经过各种必要的准备，便可以开始进行内核编译和升级了。
+
+&emsp;&emsp;升级的目的是为了打造一个强有力的Kali，因此，无线网卡的加载是非常重要的。以下是在WSL中安装的Kali界面和工具集。具体过程就省略了，和本次技术实践的目的不一样。
+
+![完整的WSL2 Kali环境](https://github.com/superbinny/wsl2study/blob/master/img/kali_full.png)
+
 ## WSL2的改造思路
-&emsp;&emsp;微软在新的WSL2中（安装请参考[WSL2安装](https://docs.microsoft.com/zh-cn/windows/wsl/wsl2-install)），使用了Hyper-V技术支持独立的Linux应用，但遗憾的是，无论是微软的Hyper-V技术还是这个新的WSL2，都不直接支持无线网卡等USB设备。最近在研究WSL的过程中，发现利用微软开源的WSL内核代码，通过手动编译内核，加入一个名为USBIP的项目，通过在宿主机中运行USBIP的服务程序，来将主机的USB网卡通过USBIP转发给WSL内核中，从而实现主机USB设备透明地提供给WSL使用。
+&emsp;&emsp;微软在新的WSL2中（安装请参考[WSL2安装](https://docs.microsoft.com/zh-cn/windows/wsl/wsl2-install)），使用了Hyper-V技术支持独立的Linux应用，但遗憾的是，无论是微软的Hyper-V技术还是这个Windows 10 2004版上新的WSL2，都不直接支持无线网卡等USB设备。最近在研究WSL的过程中，发现利用微软开源的WSL内核代码，通过手动编译内核，加入一个名为USBIP的项目，通过在宿主机中运行USBIP的服务程序，来将主机的USB网卡通过USBIP转发给WSL内核中，从而实现主机USB设备透明地提供给WSL使用。
 
 &emsp;&emsp;在Windows中安装USBIP，可以通过下载GIT代码来编译实现：git clone <https://github.com/cezuni/usbip-win.git> 。USBIP的功能就是将任何主机端的USB口，通过以太报文传送到客户端，让客户端虚拟出这个USB设备，实现USB协议的透传效果。
 
@@ -26,10 +34,31 @@
 
 &emsp;&emsp;操作系统启动部分，所有的WSL都是公用的，因此，所谓内核编译，就是替换掉这个公用的部分。无论你是运行Kali还是Ubuntu还是其他的系统，此部分都是共同的。所以，在Kali中编译了内核代码，并且替换现有的内核以后，实际上，每个镜像都具备了统一种内核功能。比如，我们这次完成的USBIP支持功能。
 
-## 开始编译内核代码
+## 编译内核代码并替换内核
 
 &emsp;&emsp;微软开放了WSL2的内核，直接可以通过GitHub下载：git clone <https://github.com/microsoft/WSL2-Linux-Kernel>。
 
-&emsp;&emsp;从微软商店下载安装最新的Kali2020，经过各种必要的准备，便可以开始进行内核编译和升级了。
+&emsp;&emsp;编译时间很快，可能是我机器强大的原因，也可能是另外的原因，系统在编译时候，自动加了-j12选项，太智能了。估计是系统检测到环境中CPU内核等数量，自动加上的优化选项。总之，自从微软加入开源的Linux阵营后，秒杀所有其他努力活着的程序猿（比如有了VSCode，我几乎不再使用其他的各种IDE环境了）。不过为了使用网卡驱动，必须有几个选项在menuconfig选择的时候，勾选的。具体的我忘记了，主要是在编译网卡驱动的时候，提示找不到各种头文件的时候或者找不到某些变量的时候，重新来勾选内核的某些支持功能。因为我们的无线网卡主要运行在嗅探模式，并不是所有网络都支持。我选择的是瑞昱Realtek-RTL8187无线网卡，该网卡功率可以调节，并且网上有源码支持内核的编译。
 
-&emsp;&emsp;编译时间很快，可能是我机器强大的原因。不过为了使用网卡驱动，必须有几个选项在menuconfig选择的时候，勾选的。具体的我忘记了，主要是在编译网卡驱动的时候，提示找不到各种头文件的时候或者找不到某些变量的时候，重新来勾选内核的某些支持功能。因为我们的无线网卡主要运行在嗅探模式，并不是所有网络都支持。我选择的是瑞昱Realtek-RTL8187无线网卡，该网卡功率可以调节，并且网上有源码支持内核的编译。
+![Realtek-RTL8187无线网卡](https://github.com/superbinny/wsl2study/blob/master/img/Realtek-RTL8187.jpg)
+
+&emsp;&emsp;最好先***make distclean***清除所有的垃圾文件，然后重新编译。最近发现WSL2-Linux-Kernel的变化挺大的，所以，最好.config备份工作以后，最好还是经常做一下git reset --hard以及git pull来更新最新内核文件。为了简单起见，最好从当前的操作系统中拷贝定制的.config文件来正确编译新的内核：
+
+&emsp;&emsp;***cp /proc/config.gz . & gzip -d ./config.gz & mv config .config & make menuconfig***
+
+&emsp;&emsp;编译结束以后，可以***make modules_install & make heards_install & make install***来安装内核文件和支持库到 /lib/modules 中。
+
+&emsp;&emsp;这里我有个技巧：可以随便在某个硬盘x:上建立一个Source目录，然后软连接到该目录，以便于内外交换各种文件和在外部宿主机上编译代码。我的所有源码文件都存放在这个x:\Source中。
+
+&emsp;&emsp;***mkdir ~/source & ln -s /mnt/x/Source ~/source***
+
+&emsp;&emsp;![编译后产生的vmlinux文件](https://github.com/superbinny/wsl2study/blob/master/img/vmlinux.png)
+
+&emsp;&emsp;编译后，在本级目录中找到vmlinux文件，拷贝到~/source中，然后停止WSL虚拟机（PS C:\WINDOWS\system32>***wsl --shutdown***）,再然后，备份好***C:\Windows\System32\lxss\tools\kernel***，将vmlinux改名为kernel以后，重新启动Kali。
+
+&emsp;&emsp;![编译后产生的vmlinux文件](https://github.com/superbinny/wsl2study/blob/master/img/uname_r.png)
+
+&emsp;&emsp;至此，已经改造了新的WSL2内核，用来加载我们的USBIP驱动了。
+
+## 编译USBIP并加入到内核中
+
