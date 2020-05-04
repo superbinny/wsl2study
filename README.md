@@ -9,7 +9,7 @@
 
 &emsp;&emsp;看看以下破解公式，就知道用 PMKID 破解无线密码，变得轻松很多。具体原理就不在这里深入探讨了，以后准备找个时间专门讨论这个问题：
 
-&emsp;&emsp;***PMKID = HMAC-SHA1-128(PMK, "PMK Name" | MAC_AP | MAC_STA)***
+&emsp;&emsp;&emsp;&emsp; ***PMKID = HMAC-SHA1-128(PMK, "PMK Name" | MAC_AP | MAC_STA)***
 
 &emsp;&emsp;以往是在虚拟机中做破解，既笨重又没有效率，现在微软推出 WSL2，刚好用来做 WiFi 密码破解的实验环境。但是，目前放出的 WSL2 没有想象中的完美，因此，我决定改造 WSL2，来达到和真机或者 VMware 虚拟机一样的效果。我喜爱 WSL2 主要原因在于，WSL2 启动太快了，只要一秒钟，而与 Windows 的完美结合，还占用最少的资源，加上可以直接与 Linux 通信的 VSCode，使得编程的研究环境大大友好，感觉 Windows 和 Linux 的混合编程从来没有这么美好过。（PS. 通过迁移工具，将 WSL2 迁移到独立的虚拟文件硬盘中，走到哪里都可以不用重新安装和配置 Kali 环境了）
 
@@ -49,7 +49,7 @@
 
 &emsp;&emsp;最好先 ***make distclean*** 清除所有的垃圾文件，然后重新编译。最近发现 WSL2-Linux-Kernel 的变化挺大的，所以，最好 .config 备份工作以后，最好还是经常做一下 git reset --hard 以及 git pull 来更新最新内核文件。为了简单起见，最好从当前的操作系统中拷贝定制的  .config  文件来正确编译新的内核。
 
-&emsp;&emsp;***cp /proc/config.gz . & gzip -d ./config.gz & mv config .config & make menuconfig***
+&emsp;&emsp;&emsp;&emsp; ***cp /proc/config.gz . & gzip -d ./config.gz & mv config .config & make menuconfig***
 
 &emsp;&emsp;由于新内核支持 USB/IP，所以在 menuconfig 中需要选择：
 
@@ -62,7 +62,7 @@
 
 &emsp;&emsp;这里我有个技巧：随便在某个硬盘x:上建立一个 Source 目录，然后软连接到该目录，以便于内外交换各种文件和在外部宿主机上编译代码。我的所有源码文件都存放在这个  x:\Source  中。
 
-&emsp;&emsp;***mkdir ~/source & ln -s /mnt/x/Source ~/source***
+&emsp;&emsp;&emsp;&emsp; ***mkdir ~/source & ln -s /mnt/x/Source ~/source***
 
 &emsp;&emsp;![编译后产生的vmlinux文件](https://github.com/superbinny/wsl2study/blob/master/img/vmlinux.png)
 
@@ -78,7 +78,7 @@
 
 &emsp;&emsp;进入内核代码的 tools，开始编译：
 
-&emsp;&emsp;***cd tools/usb/usbip & ./autogen.sh & ./configure & make install***
+&emsp;&emsp;&emsp;&emsp; ***cd tools/usb/usbip & ./autogen.sh & ./configure & make install***
 
 ## 在 Kali 中挂载无线网卡
 
@@ -88,7 +88,7 @@
 
 &emsp;&emsp;以下是我用 usbip 列出 Windows 上的设备并且绑定该设备提供服务的画面，注意，其中 1-4 为 RTL8187L 网卡。此时，**注意将 Windows 防火墙设置中加入服务提供程序usbipd.exe**，不然一会Kali中找不到：
 
-&emsp;&emsp;![Windows加载USB/IP](https://github.com/superbinny/wsl2study/blob/master/img/usbip_win.png)
+&emsp;&emsp; ![Windows加载USB/IP](https://github.com/superbinny/wsl2study/blob/master/img/usbip_win.png)
 
 ### 在 Kali 中启动 USB/IP，以接入 Windows 的 USB 设备
 
@@ -96,11 +96,11 @@
 
 &emsp;&emsp;首先我们得知道 Windows 中绑定虚拟 WSL 网卡的那个 IP 地址是什么，为此，可以运行：
 
-&emsp;&emsp;***export wsl_ip=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')***
+&emsp;&emsp;&emsp;&emsp; ***export wsl_ip=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')***
 
 &emsp;&emsp;将该地址找到并且保存在环境变量 wsl_ip 中，以备使用。我这里是 172.20.80.1 。此时，Windows 中应该有调试信息显示，如果没有，很不幸，前面要么没做好，要么防火墙没通过。
 
-&emsp;&emsp;***# usbip list -r $wsl_ip***
+&emsp;&emsp;&emsp;&emsp; ***# usbip list -r $wsl_ip***
 
 在挂载前，我们得加载前面内核编译产生的几个新模块。分别是 usbcore.ko、usb-common.ko、usbip-core.ko 和 vhci-hcd.ko，此外，还有其他的模块，根据你的需要加载即可。通过 modprobe 先加载进系统：
 
