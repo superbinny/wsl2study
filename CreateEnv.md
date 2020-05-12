@@ -24,7 +24,7 @@
 
 ### 搭建网盘服务器
 
-&emsp;&emsp;在 seafile ![官方网站](https://www.seafile.com/home/) 上下载 Linux 服务器端的![文件](http://seafile-downloads.oss-cn-shanghai.aliyuncs.com/seafile-server_7.1.3_x86-64.tar.gz)，根据![官方手册](https://cloud.seafile.com/published/seafile-manual-cn/home.md)，顺利安装到香港的服务器中。
+&emsp;&emsp;在 seafile [官方网站](https://www.seafile.com/home/) 上下载 Linux 服务器端的[文件](http://seafile-downloads.oss-cn-shanghai.aliyuncs.com/seafile-server_7.1.3_x86-64.tar.gz)，根据[官方手册](https://cloud.seafile.com/published/seafile-manual-cn/home.md)，顺利安装到香港的服务器中。
 
 &emsp;&emsp;在运行 seahub 服务的时候，出了点小问题，不过很快解决，跟踪了 seahub.sh 启动代码，主要是缺省的 Ubuntu 环境缺少 Python 的支持库原因。大部分的问题都是对 Python 支持库或者 Python 的版本不对引起。
 
