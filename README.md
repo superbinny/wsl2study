@@ -25,7 +25,7 @@
 
 &emsp;&emsp;通过对 Windows 的升级，来最终获取 WSL2 的使用体验。不过也可以在 VMware 中安装最新的体验版来直接使用 WSL2 的所有特性。我注册了微软的体验者用户，然后从[Windows10 体验站](https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewiso?wa=wsignin1.0)中下载最新的体验包 **Windows10_InsiderPreview_EnterpriseVL_x64_zh-cn_19041.iso**，直接安装这个体验包，可以省去很多升级的麻烦。
 
-&emsp;&emsp;微软在新的 WSL2 中（安装请参考 [WSL2 安装](https://docs.microsoft.com/zh-cn/windows/wsl/wsl2-install)），使用了 Hyper-V 技术支持独立的 Linux 应用（换句话说，Hyper-V 主要解决 Windows 不完美支持大小写以及软硬链接等Linux中的各种问题，但是，可能会产生安全方面的问题，比如这次内核的改造刚才中，发现了一些安全方面存在的隐患，Windows 和 Linux 的结合，最头疼的实际上是用户权限分配问题，还有个隐藏的问题就是，Windows 如果强行搞一个大小写敏感的文件系统，会给黑客带来很多遐想的空间）。
+&emsp;&emsp;微软在新的 WSL2 中（安装请参考 [WSL2 安装](https://docs.microsoft.com/zh-cn/windows/wsl/wsl2-install)），使用了 Hyper-V 技术支持独立的 Linux 应用（换句话说，Hyper-V 主要解决 Windows 不完美支持大小写以及软硬链接等 Linux 中的各种问题，但是，可能会产生安全方面的问题，比如这次内核的改造过程中，发现了一些安全方面存在的隐患，Windows 和 Linux 的结合，最头疼的实际上是用户权限分配问题，还有个隐藏的问题就是，Windows 如果强行搞一个大小写敏感的文件系统，会给黑客带来很多遐想的空间）。
 
 &emsp;&emsp;遗憾的是，无论是微软的 Hyper-V 技术还是这个 Windows 10 2004 版上新的 WSL2，都不直接支持无线网卡等 USB 设备。最近在研究 WSL 的过程中，发现利用微软开源的 WSL 内核代码，通过手动编译内核，加入一个名为 USB/IP 的项目，通过在宿主机中运行 USB/IP 的服务程序，来将主机的USB网卡通过 USB/IP 转发给 WSL 内核中，从而实现主机 USB 设备透明地提供给 WSL 使用。
 
@@ -43,7 +43,7 @@
 
 &emsp;&emsp;微软开放了 WSL2 的内核，直接可以通过 GitHub 下载：git clone <https://github.com/microsoft/WSL2-Linux-Kernel>。
 
-&emsp;&emsp;编译前，最好先 uname -r 来查询对应的内核版本，然后 checkout 相同版本出来进行编译。编译的时间很快，可能是我机器强大的原因，也可能是另外的原因，系统在编译时候，自动加了 -j12 选项，太智能了。估计是系统检测到环境中 CPU 内核等数量，自动加上的优化选项。总之，自从微软加入开源的 Linux 阵营后，秒杀所有其他努力活着的程序猿（有了 VSCode 和 Windows Terminal，我几乎不再使用其他的各种 IDE 环境了）。不过为了使用网卡驱动，必须有几个选项在 menuconfig 选择的时候勾选的。具体的我忘记了，主要是在编译网卡驱动的时候，提示找不到各种头文件或者找不到某些变量或者出现某些奇怪问题的时候，重新来勾选内核的某些支持功能。由于我们的无线网卡主要运行在嗅探模式，而并不是所有网卡都支持 master 模式的。我选择的是瑞昱 Realtek-RTL8187L 无线网卡，该网卡功率可以调节，并且网上有源码支持驱动在内核上的编译。
+&emsp;&emsp;编译前，最好先 uname -r 来查询对应的内核版本，然后 checkout 相同版本出来进行编译。编译的时间很快，可能是我机器强大的原因，也可能是另外的原因，系统在编译时候，自动加了 -j12 选项，太智能了。估计是系统检测到环境中 CPU 内核等数量，自动加上的优化选项。总之，自从微软加入开源的 Linux 阵营后，强大到没有朋友，直接秒杀所有其他努力活着的程序猿（有了 VSCode 和 Windows Terminal，我几乎不再使用其他的各种 IDE 环境了）。不过为了使用网卡驱动，必须有几个选项在 menuconfig 选择的时候勾选的。具体的我忘记了，主要是在编译网卡驱动的时候，提示找不到各种头文件或者找不到某些变量或者出现某些奇怪问题的时候，重新来勾选内核的某些支持功能。由于我们的无线网卡主要运行在嗅探模式，而并不是所有网卡都支持 master 模式的。我选择的是瑞昱 Realtek-RTL8187L 无线网卡，该网卡功率可以调节，并且网上有源码支持驱动在内核上的编译。
 
 ![Realtek-RTL8187无线网卡](https://github.com/superbinny/wsl2study/blob/master/img/Realtek-RTL8187.jpg)
 
@@ -56,18 +56,18 @@
 + **Device Drivers->USB support->USB/IP support[M]**
 + **Device Drivers->USB support->Number of USB/IP virtual host controllers(1)**
 + **Device Drivers->Network device support->USB Network Adapters[M]**
-+ 以及各种对USB网卡和你需要的USB设备驱动支持......
++ **以及各种对USB网卡和你需要的USB设备驱动支持......**
 
 &emsp;&emsp;编译结束以后，可以 ***make modules_install & make heards_install & make install*** 来安装内核文件和相应的头文件到  **/lib/modules**  中。
 
 &emsp;&emsp;这里我有个技巧：随便在某个硬盘 x:\ 上建立一个 Source 目录，然后软软链接到该目录，以便于内外交换各种文件和在外部宿主机上编译代码。我的所有源码文件都存放在这个  x:\Source  中以节约 WSL 空间，另外由于 Windows 部分支持大小写敏感，最好这个共享的目录设置成大小写敏感，以支持某些 Linux 的应用。
 
-&emsp;&emsp;&emsp;&emsp; ***mkdir ~/source & ln -s /mnt/x/Source ~/source***
+&emsp;&emsp; ***mkdir ~/source & ln -s /mnt/x/Source ~/source***
 
 &emsp;&emsp;![编译后产生的 vmlinux 文件](https://github.com/superbinny/wsl2study/blob/master/img/vmlinux.png)
 
 &emsp;&emsp;编译后，在本级目录中找到 vmlinux 文件，拷贝到 ~/source 中，然后关闭 WSL 虚拟机（PS C:\WINDOWS\system32>***wsl --shutdown***），再然后备份好 ***C:\Windows\System32\lxss\tools\kernel*** ，将 vmlinux 改名为 kernel，便可以重新启动 Kali。
-/
+
 &emsp;&emsp;![新内核版本](https://github.com/superbinny/wsl2study/blob/master/img/uname_r.png)
 
 &emsp;&emsp;至此，已经改造了新的 WSL2 内核来加载我们的 USB/IP 驱动。
@@ -109,7 +109,7 @@
 + &emsp;&emsp;modprobe usbip-core
 + &emsp;&emsp;modprobe vhci-hcd
 
-&emsp;&emsp;我们可以先用 lsusb 测试一下，是否可以列出新的普通 USB 设备（例如 Usb hub），然后我们可以开始挂载该 IP 的 USB 设备了：***usbip attach -r $wsl_ip -b 1-4***。用 lsusb 测试一下，Kali 中是否多出一个新的 USB 设备：
+&emsp;&emsp;我们可以先用 lsusb 测试一下，是否可以列出新的普通 USB 设备（例如 Usb hub），然后我们可以开始挂载该 IP 的 USB 设备了：***usbip attach -r $wsl_ip -b 1-4***。用 lsusb 测试一下，Kali 中是否多出一个新的 USB 网卡设备：
 
 &emsp;&emsp;![Kali 加载 USB/IP](https://github.com/superbinny/wsl2study/blob/master/img/usbip_kali.jpg)
 
