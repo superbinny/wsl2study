@@ -43,11 +43,21 @@
 
 &emsp;&emsp;微软开放了 WSL2 的内核，直接可以通过 GitHub 下载：git clone <https://github.com/microsoft/WSL2-Linux-Kernel>。
 
+<<<<<<< HEAD
 &emsp;&emsp;编译前，最好先 uname -r 来查询对应的内核版本，然后 checkout 相同版本出来进行编译。编译的时间很快，可能是我机器强大的原因，也可能是另外的原因，系统在编译时候，自动加了 -j12 选项，太智能了。估计是系统检测到环境中 CPU 内核等数量，自动加上的优化选项。总之，自从微软加入开源的 Linux 阵营后，强大到没有朋友，直接秒杀所有其他努力活着的程序猿（有了 VSCode 和 Windows Terminal，我几乎不再使用其他的各种 IDE 环境了）。不过为了使用网卡驱动，必须有几个选项在 menuconfig 选择的时候勾选的。具体的我忘记了，主要是在编译网卡驱动的时候，提示找不到各种头文件或者找不到某些变量或者出现某些奇怪问题的时候，重新来勾选内核的某些支持功能。由于我们的无线网卡主要运行在嗅探模式，而并不是所有网卡都支持 master 模式的。我选择的是瑞昱 Realtek-RTL8187L 无线网卡，该网卡功率可以调节，并且网上有源码支持驱动在内核上的编译。
 
 ![Realtek-RTL8187无线网卡](https://github.com/superbinny/wsl2study/blob/master/img/Realtek-RTL8187.jpg)
 
 &emsp;&emsp;最好先 ***make distclean*** 清除所有的垃圾文件，然后重新编译。最近发现 WSL2-Linux-Kernel 的变化挺大的，所以可以将 .config 备份以后，经常做一下 ***git reset --hard*** 以及 ***git pull*** 来更新最新内核文件。为了简单起见，编译前可以先从当前的操作系统中拷贝定制的 ***.config*** 文件来正确编译新的内核。
+=======
+&emsp;&emsp;建议下载在 /usr/src 下面，然后，在 /usr/src/ 4.19.84-microsoft-standard 下检查文件系统权限 ，一般都是 755。如果一定要放在自己的目录下编译，将来可能在编译其他需要链接内核代码的源码时，出现各种权限访问问题。
+
+ &emsp;&emsp;编译时间很快，可能是我机器强大的原因，也可能是另外的原因，系统在编译时候，自动加了 -j12 选项，太智能了。估计是系统检测到环境中 CPU 内核等数量，自动加上的优化选项。总之，自从微软加入开源的 Linux 阵营后，秒杀所有其他努力活着的程序猿（比如有了 VSCode，我几乎不再使用其他的各种 IDE 环境了）。不过为了使用网卡驱动，必须有几个选项在 menuconfig 选择的时候，勾选的。具体的我忘记了，主要是在编译网卡驱动的时候，提示找不到各种头文件的时候或者找不到某些变量的时候，重新来勾选内核的某些支持功能。因为我们的无线网卡主要运行在嗅探模式，并不是所有网络都支持。我选择的是瑞昱Realtek-RTL8187无线网卡，该网卡功率可以调节，并且网上有源码支持内核的编译。
+
+![Realtek-RTL8187无线网卡](https://github.com/superbinny/wsl2study/blob/master/img/Realtek-RTL8187.jpg)
+
+&emsp;&emsp;最好先 ***make distclean*** 清除所有的垃圾文件，然后重新编译。最近发现 WSL2-Linux-Kernel 的变化挺大的，所以，在 .config 文件备份工作以后，经常做一下 git reset --hard 以及 git pull 来更新最新内核源码文件。为了简单起见，最好从当前的操作系统中拷贝定制的  .config  文件来正确编译新的内核。
+>>>>>>> 04d0a7f35c187d0f4ad3a6caac0b52e425fe1531
 
 &emsp;&emsp; ***cp /proc/config.gz . & gzip -d ./config.gz & mv config .config & make menuconfig***
 
@@ -62,12 +72,21 @@
 
 &emsp;&emsp;这里我有个技巧：随便在某个硬盘 x:\ 上建立一个 Source 目录，然后软软链接到该目录，以便于内外交换各种文件和在外部宿主机上编译代码。我的所有源码文件都存放在这个  x:\Source  中以节约 WSL 空间，另外由于 Windows 部分支持大小写敏感，最好这个共享的目录设置成大小写敏感，以支持某些 Linux 的应用。
 
+<<<<<<< HEAD
 &emsp;&emsp; ***mkdir ~/source & ln -s /mnt/x/Source ~/source***
+=======
+&emsp;&emsp;这里我有个技巧：随便在某个硬盘x:上建立一个 Source 目录，然后软连接到该目录，以便于内外交换各种文件和在外部宿主机上编译代码。我的所有源码文件都存放在这个  x:\Source  中。当然，从 Windows 访问 WSL2 就很简单了，直接在资源管理器中输入 \\wsl$，就可以访问 WSL2 中所有文件。
+>>>>>>> 04d0a7f35c187d0f4ad3a6caac0b52e425fe1531
 
 &emsp;&emsp;![编译后产生的 vmlinux 文件](https://github.com/superbinny/wsl2study/blob/master/img/vmlinux.png)
 
 &emsp;&emsp;编译后，在本级目录中找到 vmlinux 文件，拷贝到 ~/source 中，然后关闭 WSL 虚拟机（PS C:\WINDOWS\system32>***wsl --shutdown***），再然后备份好 ***C:\Windows\System32\lxss\tools\kernel*** ，将 vmlinux 改名为 kernel，便可以重新启动 Kali。
 
+<<<<<<< HEAD
+=======
+&emsp;&emsp;编译后，在本级目录中找到 vmlinux 文件，拷贝到 ~/source 中，然后停止 WSL 虚拟机（PS C:\WINDOWS\system32>***wsl --shutdown***）,再然后，备份好 ***C:\Windows\System32\lxss\tools\kernel*** ，将 vmlinux 改名为 kernel 以后，重新启动 Kali。
+
+>>>>>>> 04d0a7f35c187d0f4ad3a6caac0b52e425fe1531
 &emsp;&emsp;![新内核版本](https://github.com/superbinny/wsl2study/blob/master/img/uname_r.png)
 
 &emsp;&emsp;至此，已经改造了新的 WSL2 内核来加载我们的 USB/IP 驱动。
@@ -102,18 +121,31 @@
 
 &emsp;&emsp;&emsp;&emsp; ***usbip list -r $wsl_ip***
 
+<<<<<<< HEAD
 &emsp;&emsp;在挂载前，我们还需要加载前面内核编译产生的几个新模块。它们分别是 ***usbcore.ko、usb-common.ko、usbip-core.ko 和 vhci-hcd.ko***，此外，还有其他的模块，根据你的需要加载。通过 modprobe 命令加载进系统：
+=======
+在挂载前，我们得加载前面内核编译产生的几个新模块。分别是 ***usbcore.ko、usb-common.ko、usbip-core.ko 和 vhci-hcd.ko***，此外，还有其他的模块，根据你的需要加载即可。通过 modprobe 先加载进系统：
+>>>>>>> 04d0a7f35c187d0f4ad3a6caac0b52e425fe1531
 
 + &emsp;&emsp;modprobe usbcore
 + &emsp;&emsp;modprobe usb-common
 + &emsp;&emsp;modprobe usbip-core
 + &emsp;&emsp;modprobe vhci-hcd
 
+<<<<<<< HEAD
 &emsp;&emsp;我们可以先用 lsusb 测试一下，是否可以列出新的普通 USB 设备（例如 Usb hub），然后我们可以开始挂载该 IP 的 USB 设备了：***usbip attach -r $wsl_ip -b 1-4***。用 lsusb 测试一下，Kali 中是否多出一个新的 USB 网卡设备：
+=======
+&emsp;&emsp;我们可以先用 lsusb 测试一下，是否可以列出新的普通 USB 设备（例如 Usb hub），然后我们可以开始挂载该 IP 的 USB 设备了：***usbip attach -r $wsl_ip -b 1-4***。用 lsusb 测试一下，Kali 中是否多出一个新的 USB 设备：
+>>>>>>> 04d0a7f35c187d0f4ad3a6caac0b52e425fe1531
 
 &emsp;&emsp;![Kali 加载 USB/IP](https://github.com/superbinny/wsl2study/blob/master/img/usbip_kali.jpg)
 
-&emsp;&emsp;剩下的最后一步就是添加无线网卡驱动。如果加载了驱动，本 Kali 就可以像真机一样，享用无线网卡带来的各种福利了。
+&emsp;&emsp;剩下的最后一步就是添加无线网卡驱动。
+
++ &emsp;&emsp;modprobe compat
++ &emsp;&emsp;modprobe rtl8187
+ 
+ &emsp;&emsp;如果加载了驱动，本 Kali 就可以像真机一样，享用无线网卡带来的各种福利了。
 
 ### 加载无线网卡驱动，用 wifite 测试网卡破解功能
 
@@ -131,8 +163,11 @@
 
 &emsp;&emsp; ***.\LxRunOffline.exe m -n kali-linux -d x:\some_where***
 
+<<<<<<< HEAD
 &emsp;&emsp;来迁移到新的位置 x:\some_where，然后将 ext4.vhdx 备份下来即可（如果找不到 ext4.vhdx 文件，而是显示一堆 Linux 目录，那就是你的系统可能没有完美的 Hyper-V 支持，需要开启这个模式才行），这个镜像文件可以随身携带以免丢失。用这个虚拟机镜像文件去覆盖其他版本的 WSL 即可。该文件也可以 mount 到其他操作系统上，做数据盘使用。
 
+=======
+>>>>>>> 04d0a7f35c187d0f4ad3a6caac0b52e425fe1531
 ## 后记
 
 &emsp;&emsp;有幸赶上微软收购 Github，重磅进入 Linux ，微软推出的一系列工具和措施极大提高生产效率，降低编程的枯燥性，带来了编写和调试代码的舒适度。基本上是怀着分享的心态来做这个教程，与大家共享有关 Linxu 内核和 Windows 结合带来的生产力革命性的进步。
