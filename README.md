@@ -41,13 +41,13 @@
 
 &emsp;&emsp;微软开放了 WSL2 的内核，直接可以通过 GitHub 下载：git clone <https://github.com/microsoft/WSL2-Linux-Kernel>。
 
-&emsp;&emsp;建议下载在 /usr/src 下面，然后，在 /usr/src/ 4.19.84-microsoft-standard 下检查文件系统权限 ，一般都是 755。如果一定要放在自己的目录下编译，将来可能在编译其他需要链接内核代码的源码时，出现各种权限访问问题。
+&emsp;&emsp;建议下载在 /usr/src 下面，然后，在 /usr/src/4.19.84-microsoft-standard 下检查文件系统权限 ，一般都是 755。如果一定要放在自己的目录下编译，将来可能在编译其他需要链接内核代码的源码时，出现各种权限访问问题。
 
- &emsp;&emsp;编译时间很快，可能是我机器强大的原因，也可能是另外的原因，系统在编译时候，自动加了 -j12 选项，太智能了。估计是系统检测到环境中 CPU 内核等数量，自动加上的优化选项。总之，自从微软加入开源的 Linux 阵营后，秒杀所有其他努力活着的程序猿（比如有了 VSCode，我几乎不再使用其他的各种 IDE 环境了）。不过为了使用网卡驱动，必须有几个选项在 menuconfig 选择的时候，勾选的。具体的我忘记了，主要是在编译网卡驱动的时候，提示找不到各种头文件的时候或者找不到某些变量的时候，重新来勾选内核的某些支持功能。因为我们的无线网卡主要运行在嗅探模式，并不是所有网络都支持。我选择的是瑞昱Realtek-RTL8187无线网卡，该网卡功率可以调节，并且网上有源码支持内核的编译。
+ &emsp;&emsp;编译时间很快，可能是我机器强大的原因，也可能是另外的原因，系统在编译时候，自动加了 -j12 选项，太智能了。估计是系统检测到环境中 CPU 内核等数量，自动加上的优化选项。总之，自从微软加入开源的 Linux 阵营后，秒杀所有其他努力活着的程序猿（比如有了 VSCode，我几乎不再使用其他的各种 IDE 环境了）。不过为了使用网卡驱动，必须有几个选项在 menuconfig 选择的时候，勾选的。具体的我忘记了，主要是在编译网卡驱动的时候，提示找不到各种头文件的时候或者找不到某些变量的时候，重新来勾选内核的某些支持功能。因为我们的无线网卡主要运行在嗅探模式，并不是所有网络都支持。我选择的是瑞昱 Realtek-RTL8187 无线网卡，该网卡功率可以调节，并且网上有源码支持内核的编译。
 
 ![Realtek-RTL8187无线网卡](https://github.com/superbinny/wsl2study/blob/master/img/Realtek-RTL8187.jpg)
 
-&emsp;&emsp;最好先 ***make distclean*** 清除所有的垃圾文件，然后重新编译。最近发现 WSL2-Linux-Kernel 的变化挺大的，所以，在 .config 文件备份工作以后，经常做一下 git reset --hard 以及 git pull 来更新最新内核源码文件。为了简单起见，最好从当前的操作系统中拷贝定制的  .config  文件来正确编译新的内核。
+&emsp;&emsp;最好先 ***make distclean*** 清除所有的垃圾文件，然后重新编译。最近发现 WSL2-Linux-Kernel 的变化挺大的，所以在 .config 文件备份工作以后，经常做一下 git reset --hard 以及 git pull 来更新最新内核源码文件。为了简单起见，最好从当前的操作系统中拷贝定制的 .config 文件来正确编译新的内核。
 
 &emsp;&emsp;***cp /proc/config.gz . & gzip -d ./config.gz & mv config .config & make menuconfig***
 
@@ -55,35 +55,40 @@
 
 ```^\s*make menuconfig select:
 Device Drivers --->
-  [\*] USB support --->
-    <\*> Support for Host-side USB
-    [\*] Enable USB persist by default
-    <\*> USB Modem (CDC ACM) support
-    <\*> USB Mass Storage support
-    <\*> USB/IP support
-    <\*> VHCI hcd
+  [*] Network device support --->
+    <*> USB Network Adapters (NEW) --->          //只有选中后面 USB support，才可能出现这个选项
+      <*> Multi-purpose USB Networking Framework //用于 USB 网络传输
+      <*> Host for RNDIS and ActiveSync devices  //用于由微软制定的规范的 USB/IP 的传输协议
+
+  [*] USB support --->
+    <*> Support for Host-side USB
+    [*] Enable USB persist by default           //用于固化对 USB 的设置
+    <*> USB Modem (CDC ACM) support             //用于支持 USB 网络通信设备
+    <*> USB Mass Storage support                //支持 USB 外接硬盘
+    <*> USB/IP support
+    <*> VHCI hcd                                //虚拟主机客户端架构 (VHCI)
       (8) VHCI hcd->Number of ports per USB/IP virtual host controller
       (1) Number of USB/IP virtual host controllers
-    <\*> USB Serial Converter support --->
-      <\*> USB FTDI Single Port Serial Driver
+    <*> USB Serial Converter support --->
+      <*> USB FTDI Single Port Serial Driver    //用来支持 FTDI 公司的串口调试驱动，可以用于挂载 USB 调试器
     USB Physical Layer drivers --->
-      <\*> NOP USB Transceiver Driver
-  [\*] Network device support --->
-    <\*> USB Network Adapters (NEW) --->
-      <\*> Multi-purpose USB Networking Framework
-      <\*> Host for RNDIS and ActiveSync devices
-以及各种对USB网卡和你需要的USB设备驱动支持 ......
+      <*> NOP USB Transceiver Driver            //Linux系统上，NOP所有 USB 收发器，USB 收发器内置到 usb ip 程序
+
+以及各种对 USB 网卡和你需要的 USB 设备驱动支持 ......
 ```
 
-&emsp;&emsp;编译结束以后，可以 ***make modules_install & make heards_install & make install*** 来安装内核文件和支持库到  /lib/modules  中。
+&emsp;&emsp;编译结束以后，可以 ***make -j8 & sudo make modules_install & sudo make headers_install & sudo make install*** 来安装内核文件和支持库到  /lib/modules  中。
 
-&emsp;&emsp;这里我有个技巧：随便在某个硬盘 x: 上建立一个 Source 目录，然后软连接到该目录，以便于内外交换各种文件和在外部宿主机上编译代码。我的所有源码文件都存放在这个 x:\Source 中。当然，从 Windows 访问 WSL2 就很简单了，直接在资源管理器中输入 \\wsl$，就可以访问 WSL2 中所有文件。
+将惠普的工具 iwconfig 和 iwlist 编译进内核
+git clone <https://github.com/HewlettPackard/wireless-tools>
+
+&emsp;&emsp;这里我有个技巧：随便在某个硬盘 x: 上建立一个 Source 目录，然后软连接到该目录，以便于内外交换各种文件和在外部宿主机上编译代码。我的所有源码文件都存放在这个 x:\\Source 中。当然，从 Windows 访问 WSL2 就很简单了，直接在资源管理器中输入 \\wsl$，就可以访问 WSL2 中所有文件。
 
 &emsp;&emsp;***mkdir ~/source & ln -s /mnt/x/Source ~/source***
 
 &emsp;&emsp;![编译后产生的vmlinux文件](https://github.com/superbinny/wsl2study/blob/master/img/vmlinux.png)
 
-&emsp;&emsp;编译后，在本级目录中找到 vmlinux 文件，拷贝到 ~/source 中，然后停止 WSL 虚拟机（PS C:\WINDOWS\system32>***wsl --shutdown***）,再然后，备份好 ***C:\Windows\System32\lxss\tools\kernel*** ，将 vmlinux 改名为 kernel 以后，便可以重新启动 Kali 。
+&emsp;&emsp;编译后，在本级目录中找到 vmlinux 文件，拷贝到 ~/source 中，然后停止 WSL 虚拟机（PS C:\\WINDOWS\\system32>***wsl --shutdown***）,再然后，备份好 ***C:\\Windows\\System32\\lxss\\tools\\kernel*** ，将 vmlinux 改名为 kernel 以后，便可以重新启动 Kali 。
 
 &emsp;&emsp;![新内核版本](https://github.com/superbinny/wsl2study/blob/master/img/uname_r.png)
 
@@ -97,13 +102,15 @@ Device Drivers --->
 
 &emsp;&emsp;***cd tools/usb/usbip & ./autogen.sh & ./configure & make install***
 
+&emsp;&emsp;估计 make 的时候会产生错误警告，可以使用 make CFLAGS+=-Wno-address-of-packed-member 屏蔽错误。
+
 ## 在 Kali 中挂载无线网卡
 
 ### 在 Windows 中提供 USB/IP 服务
 
 &emsp;&emsp;见证奇迹的时候即将开始。首先，我们要将 Windows 设置成测试模式，以便于加载 USB/IP 的驱动，并提供 USB/IP 服务。这个过程可以在百度上搜索。如果实在搞不定，有时间我再写一篇 USB/IP 在 Windows 下的编译和使用。但是没技术含量的东西实在没兴趣做。
 
-&emsp;&emsp;以下是我用 usbip 列出 Windows 上的设备并且绑定该设备提供服务的画面，注意，其中 1-4 为 RTL8187L 网卡。此时，**注意将 Windows 防火墙设置中加入服务提供程序usbipd.exe**，不然一会Kali中找不到：
+&emsp;&emsp;以下是我用 usbip 列出 Windows 上的设备并且绑定该设备提供服务的画面，注意，其中 1-4 为 RTL8187L 网卡。此时，**注意将 Windows 防火墙设置中加入服务提供程序 usbipd.exe**，不然一会Kali中找不到：
 
 &emsp;&emsp;![Windows加载USB/IP](https://github.com/superbinny/wsl2study/blob/master/img/usbip_win.png)
 
@@ -128,12 +135,12 @@ Device Drivers --->
 
 &emsp;&emsp;我们可以先用 lsusb 测试一下，是否可以列出新的普通 USB 设备（例如 Usb hub），然后我们可以开始挂载该 IP 的 USB 设备了：***usbip attach -r \$wsl_ip -b 1-4***。用 lsusb 测试一下，Kali 中是否多出一个新的 USB 设备：
 
-&emsp;&emsp;![Kali加载USB/IP](https://github.com/superbinny/wsl2study/blob/master/img/usbip_kali.jpg)
+&emsp;&emsp;![Kali 加载 USB/IP](https://github.com/superbinny/wsl2study/blob/master/img/usbip_kali.jpg)
 
 &emsp;&emsp;剩下的最后一步就是添加无线网卡驱动。
 
 + modprobe compat
-+ modprobe rtl8187
++ modprobe rtl8187 //来源于后面加载的网卡驱动
  
  &emsp;&emsp;如果加载了驱动，本 Kali 就可以像真机一样，享用无线网卡带来的各种福利了。
 
@@ -141,13 +148,13 @@ Device Drivers --->
 
 &emsp;&emsp;一种方式是用源码在这个配置好的 kali 中编译和安装，不过我发现这个开源项目可以完美解决我手头的 8187L 驱动安装问题：git clone <https://github.com/matrix/backports-rtl8187>，于是，就偷懒直接用了，下载以后，运行脚本程序，如果有问题，可以简单修改一下就可以通过。
 
-&emsp;&emsp;![wifite运行界面](https://github.com/superbinny/wsl2study/blob/master/img/wifite.png)
+&emsp;&emsp;![wifite 运行界面](https://github.com/superbinny/wsl2study/blob/master/img/wifite.png)
 
 ### 备份 Kali 虚拟机，直接在其他机器上使用
 
 &emsp;&emsp;好不容易安装了各种编译工具以及辛苦搭建的环境，我们希望能在多个地方重复使用。就像使用 VMware 的镜像一样。方便起见，可以使用迁移工具，将 Kali 镜像文件备份下来，然后在其他机器上随便安装一个新的 Kali，再用这个镜像覆盖掉该镜像，便完成了整个定制 Kali 环境的迁移和备份，做到不断打磨利剑的效果。
 
-&emsp;&emsp;使用 LxRunOffline 工具，在 Kali 关机的情况下，运行：***.\LxRunOffline.exe m -n kali-linux -d x:\some_where*** 来迁移到新的位置 x:\some_where，然后将 ext4.vhdx 备份下来即可，随身携带以免丢失。用这个虚拟机镜像文件去覆盖其他版本的 WSL 即可。该文件也可以 mount 到其他操作系统上，做数据盘使用。
+&emsp;&emsp;使用 LxRunOffline 工具，在 Kali 关机的情况下，运行：***.\\LxRunOffline.exe m -n kali-linux -d x:\\some_where*** 来迁移到新的位置 x:\\some_where，然后将 ext4.vhdx 备份下来即可，随身携带以免丢失。用这个虚拟机镜像文件去覆盖其他版本的 WSL 即可。该文件也可以 mount 到其他操作系统上，做数据盘使用。
 
 ## 后记
 
