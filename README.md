@@ -51,22 +51,39 @@
 
 &emsp;&emsp;***cp /proc/config.gz . & gzip -d ./config.gz & mv config .config & make menuconfig***
 
-&emsp;&emsp;由于新内核支持 USB/IP，所以在 menuconfig 中需要选择：
+&emsp;&emsp;由于新内核支持 USB/IP，所以在 menuconfig 中需要选择 &rarr;：
 
-+ **Device Drivers->USB support->USB/IP support[M]**
-+ **Device Drivers->USB support->Number of USB/IP virtual host controllers(1)**
-+ **Device Drivers->Network device support->USB Network Adapters[M]**
-+ 。。。，各种对USB网卡和你需要的USB设备驱动支持
+```^\s*make menuconfig select:
+Device Drivers --->
+  [\*] USB support --->
+    <\*> Support for Host-side USB
+    [\*] Enable USB persist by default
+    <\*> USB Modem (CDC ACM) support
+    <\*> USB Mass Storage support
+    <\*> USB/IP support
+    <\*> VHCI hcd
+      (8) VHCI hcd->Number of ports per USB/IP virtual host controller
+      (1) Number of USB/IP virtual host controllers
+    <\*> USB Serial Converter support --->
+      <\*> USB FTDI Single Port Serial Driver
+    USB Physical Layer drivers --->
+      <\*> NOP USB Transceiver Driver
+  [\*] Network device support --->
+    <\*> USB Network Adapters (NEW) --->
+      <\*> Multi-purpose USB Networking Framework
+      <\*> Host for RNDIS and ActiveSync devices
+以及各种对USB网卡和你需要的USB设备驱动支持 ......
+```
 
 &emsp;&emsp;编译结束以后，可以 ***make modules_install & make heards_install & make install*** 来安装内核文件和支持库到  /lib/modules  中。
 
-&emsp;&emsp;这里我有个技巧：随便在某个硬盘x:上建立一个 Source 目录，然后软连接到该目录，以便于内外交换各种文件和在外部宿主机上编译代码。我的所有源码文件都存放在这个  x:\Source  中。当然，从 Windows 访问 WSL2 就很简单了，直接在资源管理器中输入 \\wsl$，就可以访问 WSL2 中所有文件。
+&emsp;&emsp;这里我有个技巧：随便在某个硬盘 x: 上建立一个 Source 目录，然后软连接到该目录，以便于内外交换各种文件和在外部宿主机上编译代码。我的所有源码文件都存放在这个 x:\Source 中。当然，从 Windows 访问 WSL2 就很简单了，直接在资源管理器中输入 \\wsl$，就可以访问 WSL2 中所有文件。
 
 &emsp;&emsp;***mkdir ~/source & ln -s /mnt/x/Source ~/source***
 
 &emsp;&emsp;![编译后产生的vmlinux文件](https://github.com/superbinny/wsl2study/blob/master/img/vmlinux.png)
 
-&emsp;&emsp;编译后，在本级目录中找到 vmlinux 文件，拷贝到 ~/source 中，然后停止 WSL 虚拟机（PS C:\WINDOWS\system32>***wsl --shutdown***）,再然后，备份好 ***C:\Windows\System32\lxss\tools\kernel*** ，将 vmlinux 改名为 kernel 以后，重新启动 Kali。
+&emsp;&emsp;编译后，在本级目录中找到 vmlinux 文件，拷贝到 ~/source 中，然后停止 WSL 虚拟机（PS C:\WINDOWS\system32>***wsl --shutdown***）,再然后，备份好 ***C:\Windows\System32\lxss\tools\kernel*** ，将 vmlinux 改名为 kernel 以后，便可以重新启动 Kali 。
 
 &emsp;&emsp;![新内核版本](https://github.com/superbinny/wsl2study/blob/master/img/uname_r.png)
 
@@ -94,29 +111,29 @@
 
 &emsp;&emsp;回到我们的 Kali ，此时此刻，如果使用命令 lsusb 是无法列出任何一个设备的。我们可以命令行上可以先查询 Windows 提供的服务是否存在，如果存在，可以列出 Windows 上绑定的 USB 设备，然后在 Linux 中进行绑定。绑定以后，实际上该设备就成为 Linux 中可以进一步识别的设备了。
 
-&emsp;&emsp;首先我们得知道 Windows 中绑定虚拟 WSL 网卡的那个 IP 地址是什么，为此，可以运行：
+&emsp;&emsp;首先我们需要知道 Windows 中绑定虚拟 WSL 网卡的那个 IP 地址是什么，为此，可以运行：
 
-&emsp;&emsp;***export wsl_ip=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')***
+&emsp;&emsp;***export wsl_ip=\$(cat /etc/resolv.conf | grep nameserver | awk \'{print $2}\')***
 
 &emsp;&emsp;将该地址找到并且保存在环境变量 wsl_ip 中，以备使用。我这里是 172.20.80.1 。此时，Windows 中应该有调试信息显示，如果没有，很不幸，前面要么没做好，要么防火墙没通过。
 
-&emsp;&emsp;***# usbip list -r $wsl_ip***
+&emsp;&emsp; ***# usbip list -r \$wsl_ip***
 
-在挂载前，我们得加载前面内核编译产生的几个新模块。分别是 ***usbcore.ko、usb-common.ko、usbip-core.ko 和 vhci-hcd.ko***，此外，还有其他的模块，根据你的需要加载即可。通过 modprobe 先加载进系统：
+&emsp;&emsp;在挂载前，我们得加载前面内核编译产生的几个新模块。分别是 ***usbcore.ko、usb-common.ko、usbip-core.ko 和 vhci-hcd.ko***，此外，还有其他的模块，根据你的需要加载即可。通过 modprobe 先加载进系统：
 
-+ &emsp;&emsp;modprobe usbcore
-+ &emsp;&emsp;modprobe usb-common
-+ &emsp;&emsp;modprobe usbip-core
-+ &emsp;&emsp;modprobe vhci-hcd
++ modprobe usbcore
++ modprobe usb-common
++ modprobe usbip-core
++ modprobe vhci-hcd
 
-&emsp;&emsp;我们可以先用 lsusb 测试一下，是否可以列出新的普通 USB 设备（例如 Usb hub），然后我们可以开始挂载该 IP 的 USB 设备了：***usbip attach -r $wsl_ip -b 1-4***。用 lsusb 测试一下，Kali 中是否多出一个新的 USB 设备：
+&emsp;&emsp;我们可以先用 lsusb 测试一下，是否可以列出新的普通 USB 设备（例如 Usb hub），然后我们可以开始挂载该 IP 的 USB 设备了：***usbip attach -r \$wsl_ip -b 1-4***。用 lsusb 测试一下，Kali 中是否多出一个新的 USB 设备：
 
 &emsp;&emsp;![Kali加载USB/IP](https://github.com/superbinny/wsl2study/blob/master/img/usbip_kali.jpg)
 
 &emsp;&emsp;剩下的最后一步就是添加无线网卡驱动。
 
-+ &emsp;&emsp;modprobe compat
-+ &emsp;&emsp;modprobe rtl8187
++ modprobe compat
++ modprobe rtl8187
  
  &emsp;&emsp;如果加载了驱动，本 Kali 就可以像真机一样，享用无线网卡带来的各种福利了。
 
